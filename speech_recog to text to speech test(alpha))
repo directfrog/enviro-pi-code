@@ -1,0 +1,29 @@
+import pyttsx3
+import speech_recognition as sr
+
+#before running this remember to download the following libraries. just a note, it is HARD to do that. i ahd to watch a goddamn video in Hindi which happened to be the only one on the problem. so yup, just message or call me.
+
+
+#function takes string as parameter
+def say(text):
+	engine = pyttsx3.init()
+  #function then says the string
+	engine.say(text)
+	engine.runAndWait()
+ 
+
+# obtain audio from the microphone
+def listen():
+  #creates a speech recog object
+	r = sr.Recognizer()
+	with sr.Microphone() as source:
+	    print("Say something!")
+      #listens.....
+	    audio = r.listen(source)
+      #This is the cool part. it takes what it hears and puts it into a string
+	    return r.recognize_sphinx(audio)
+
+
+text = listen()
+print(text)
+say(f"i heard {text}")
