@@ -11,7 +11,7 @@ list_1 = []
 list_2 = []
 list_3 = []
 
-req = Request("https://www.bbcgoodfood.com/recipes/collection/top-20-winter-recipes") #Or any link
+req = Request("https://www.bbcgoodfood.com/recipes/collection/top-20-winter-recipes") #Or any link (right now only on BBCGoodFood)
 html_page = urlopen(req)
 
 soup = BeautifulSoup(html_page, "lxml")
