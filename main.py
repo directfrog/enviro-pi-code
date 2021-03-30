@@ -5,189 +5,182 @@ from urllib.request import Request, urlopen
 import pandas as pd
 import random
 
-def scrape(alpha):
-    start_time = time.time()
-    link_list = []
-    data = pd.read_csv('Recipe Collection.csv')  
-    for x in range(len(data)):
-      food_data = data.iloc[x, 0]
-      found = re.search(alpha, food_data)
-      if found != None:
-        link = data.iloc[x, 1]
-        print(f'link found: {link}')
-        link_list.append(link)
+class scraper(object):
+  def __init__(self, alpha, beta):
+    self.start_time = time.time()
+    self.link_list = [] 
+    self.data = pd.read_csv('Recipe Collection.csv')
+    self.list_RECIPES = []
+    #ingredients list
+    self.list_1 = []
+    #title list
+    self.list_2 = []
+    #instructions list
+    self.list_3 = []
+    self.links = []
+    self.choose = 0
+    self.alpha = alpha
+    self.beta = beta
 
+  def scrape(self):
+      for x in range(len(self.data)):
+        self.food_data = self.data.iloc[x, 0]
+        self.found = re.search(self.alpha, self.food_data)
+        if self.found != None:
+          self.link = self.data.iloc[x, 1]
+          print(f'link found: {self.link}')
+          self.link_list.append(self.link)
+
+      if len(self.link_list) == 0:
+        print(f'EnvrioBot ERROR: couldnt find food item: {self.alpha}')
+        sys.exit()
+
+      ### Create choice option here ###
+      self.link_list_choice = self.link_list[0]
+      self.req = Request(str(self.link_list_choice)) #Or any link
+
+      self.html_page = urlopen(self.req)
+      self.soup = BeautifulSoup(self.html_page, "lxml")
+
+      def get_the_shit(self, list_1, list_2, list_3, z):
+        #This is the cool bit. It gets the title, instructions, and ingredients of the recipes with the ingredient in it.
+        self.title = self.scrape_me.title()
+        print(f'Title: {self.title}')
+        self.instructions = str(self.scrape_me.instructions())
+        self.formatting_is_shit = ''.join([x for x in z])
+        self.list_1.append(self.formatting_is_shit)
+        self.list_2.append(self.title)
+        self.list_3.append(str(self.instructions)) 
+        return self.list_1, self.list_2, self.list_3
+
+
+      def format(self, array):
+        self.arr = []
+        for x in array:
+          self.arr.append(x)
+        return ''.join(self.arr)
+
+      #please ask no questions about the function naming
+      def return_the_shit(self, list_1, list_2, list_3, start_time):
+        self.duration = time.time() - start_time
+        for num in range(len(self.list_2)):
+          if num % 2 == 0:
+            print(str(num//2+1)+ ". "+self.list_2[num])
+        self.choose = 1#int(input("Choose a recipe (number):  "))
+
+        if len(self.list_2) == 1:
+          self.choose = 0
+          print("Let's cook",self.list_2[self.choose])
+          self.ingredients = self.list_1[0]
+          self.instructions = self.list_3[0]
+        else:
+          print("Let's cook",self.list_2[(self.choose*2)-1])
+        self.instructions = self.list_3[(self.choose*2)-1]
+        self.instructions = self.instructions.split(".")
+        formatted = format(self, self.ingredients)
+        return formatted
+
+
+      ### Sorts the links and returns the ingredients ###
+      for link in self.soup.findAll('a'):
+        self.main_link = link.get('href')
+        self.x = re.search("recipes/", str(self.main_link))
+        self.z = re.search("https", str(self.main_link))
+        self.a = re.search("collection", str(self.main_link))
+        if self.x != None and self.z != None and self.a == None:
+          from recipe_scrapers import scrape_me
+          self.scrape_me = scrape_me(self.main_link)
+          self.z = str(self.scrape_me.ingredients())
+          #x = re.search(beta, z)
+          #if x != None:
+          self.list_RECIPES.append(self.main_link)    
+          self.list_1, self.list_2, self.list_3 = get_the_shit(self, self.list_1, self.list_2, self.list_3, self.z)
+          self.ingreds = return_the_shit(self, self.list_1, self.list_2, self.list_3, self.start_time)
+          return self.ingreds
+          
         
-data = pd.read_csv('Food Database.csv')
+
 
 ### INTRODUCTION ###
 
 print('---Welcome to the enviro bot---')
-print('Please enter your first item so we can get an idea of what you might be able to cook')
+print('Please enter your main food item so we can get an idea of what you might be able to cook')
 
-text = 'Are there any recipes for rice'
+text = 'Hey Joe, what are some recipes for bread'
 text = text.split()
 comma_debug_mode = False
 
-##### Processing any Commas ###
-for word in text:
-  if word[-1] == ',':
-    wrd = [w for w in word]
-    wrd.remove(',')
-    text[text.index(word)] = ''.join(wrd)
+class word_processer(object):
+  def __init__(self, text):
+    self.text = text
+    self.data = data = pd.read_csv('Food Database.csv')
+    self.found = []
+    self.search_found = []
+    self.results = []
 
-show = []
-for x in range(0, 904):
-  search = data.iloc[x, 0].split()
-  for word in text:
-    #checks for double letter foods like 'wheat bread' or 'white cabbage' and deletes the pre-word
-    if text.index(word)+1 < len(text):
-      if [text[text.index(word)], text[text.index(word)+1]] == search:
-        text.pop(text.index(word))
+  def comma_process(self):
+    for word in self.text:
+      if word[-1] == ',':
+        self.wrd = [w for w in word]
+        self.wrd.remove(',')
+        self.text[self.text.index(word)] = ''.join(self.wrd)
+    return text
 
-def obtain_input(text):
-    found = []
-    search_found = []
-    results = []
+
+  def adjective_process(self):
     for x in range(0, 904):
+      self.search = self.data.iloc[x, 0].split()
+      for word in self.text:
+        #checks for double letter foods like 'wheat bread' or 'white cabbage' and deletes the pre-word
+        if self.text.index(word)+1 < len(self.text):
+          if [self.text[self.text.index(word)], self.text[self.text.index(word)+1]] == self.search:
+            self.text.pop(text.index(word))
+    return text
 
-      search = data.iloc[x, 0].split()
-      
-      for word in text:
-        if word in search or word == search:
-          if search[-1] == word:
-            if word not in results:
-              results.append(word)
-                  
+  def obtain_input(self, text):
+    text = self
+    for x in range(0, 904):
+      self.search = self.data.iloc[x, 0].split()
+      for word in self.text:
+        if word in self.search or word == self.search:
+          if self.search[-1] == word:
+            if word not in self.results:
+              self.results.append(word)
+                    
         if word[-1] == 's':  
-          wrd = [x for x in word]
-          wrd.pop()
-          if ''.join(wrd) in search:
-            if ''.join(wrd) not in results:
-              results.append(''.join(wrd))
+          self.wrd = [x for x in word]
+          self.wrd.pop()
+          if ''.join(self.wrd) in self.search:
+            if ''.join(self.wrd) not in self.results:
+              self.results.append(''.join(self.wrd))
         if word[-1] != 's':
-          wrd = [x for x in word]
-          wrd.append('s')
-          if ''.join(wrd) in search:
-            if ''.join(wrd) not in results:
-              results.append(''.join(wrd))
-    return results
+          self.wrd = [x for x in word]
+          self.wrd.append('s')
+          if ''.join(self.wrd) in self.search:
+            if ''.join(self.wrd) not in self.results:
+              self.results.append(''.join(self.wrd))
+    return self.results
 
-while True:
-  #unsorted_result = obtain_input(text)
-  out = obtain_input(text)
-  #out = sort_input(unsorted_result)
-  print(f'output: {out}')
+beta = None
+def run(beta):
+  wp = word_processer(text)
+  out = wp.obtain_input(text)
+  web_scraper = scraper(out[0], beta)
   if len(out) == 0:
     print('didnt find the food item')
+    sys.exit()
   else:
     print(f'Found word: {out[0]}')
     print('---------------')
     print('---------------')
-    scrape(out[0])
+    if len(out) == 1:
+      beta = None
+    else:
+      beta = out[1]
+    print(f'out: {out[0]}')
+    ingreds = web_scraper.scrape()
+    print(ingreds)
+
+while True:
+  run(beta)
   sys.exit()
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-'''
-        if found != None:
-            link = data.iloc[x]["BBCGoodFood link"]
-            print(data.iloc[x]['Wasted Food'])
-            link_list.append(link)
-        else:
-            print(f'failed to find food item: {alpha}')
-            print('Ending Process')
-            sys.exit()
-                  
-    #alpha = input("What other ingredient do you want to find: ")
-    alpha = beta
-    print(" ")
-
-    list_RECIPES = []
-    list_1 = []
-    list_2 = []
-    list_3 = []
-
-    req = Request(str(link)) #Or any link
-    html_page = urlopen(req)
-    soup = BeautifulSoup(html_page, "lxml")
-
-    links = []
-
-    for link in soup.findAll('a'):
-      main_link = link.get('href')
-      x = re.search("recipes/", str(main_link))
-      z = re.search("https", str(main_link))
-      a = re.search("collection", str(main_link))
-      if x != None and z != None and a == None:
-        from recipe_scrapers import scrape_me
-        scrape_me = scrape_me(main_link)
-        z = str(scrape_me.ingredients())
-        x = re.search(alpha, z)
-        if x != None:
-          list_RECIPES.append(main_link)
-          title = scrape_me.title()
-          instructions = str(scrape_me.instructions())
-          list_1.append(z)
-          list_2.append(title)
-          list_3.append(str(instructions))
-            # This is the cool bit. It gets the title, instructions, and ingredients of the recipes with the ingredient in it. 
-
-    duration = time.time() - start_time
-
-    print(duration)
-
-    for num in range(len(list_2)):
-      if num % 2 == 0:
-        print(str(num//2+1)+ ". "+list_2[num])
-
-       
-
-    print(" ")
-    choose = 1#int(input("Choose a recipe (number):  "))
-
-
-    print("  ")
-    print("Let's cook",list_2[choose*2-1])
-    print("")
-    print("Here are the ingredients you need: \n")
-
-    ingredients = list_1[choose*2-1]
-    ingredients = ingredients.split("'")
-
-    for x in range(len(ingredients)):
-      if x % 2 == 1:
-        ingreds = ingredients[x]
-
-    print("  ")
-
-    
-    instructions = list_3[choose*2-1]
-    instructions = instructions.split(".")
-    for x in range(len(instructions)):
-      press = input("Press ENTER to continue: ")
-      instr = instructions[x]
-
-    return ingreds
-'''
