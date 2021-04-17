@@ -4,253 +4,108 @@ from bs4 import BeautifulSoup
 from urllib.request import Request, urlopen
 import pandas as pd
 import random
-import math
-import time
-from speech_recog_owo import *
-import pyttsx3
-from web_scraping import *
-from word_processing import *
-import csv
 
-debug_mode = True
-          
-def say(text):
-  engine = pyttsx3.init()
-  voices = engine.getProperty('voices')
-  rate = 220
-  engine.setProperty('rate', rate)
-  engine.setProperty('voice', voices[0].id) 
-  engine.say(text)
-  engine.runAndWait()
-
-class EnviroBot:
-  def __init__(self, beta, text):
+class scraper(object):
+  def __init__(self, alpha, beta):
+    self.start_time = time.time()
+    self.link_list = [] 
+    self.data_load = os.path.join(os.path.dirname(os.path.abspath(__file__)), "Recipe Collection.csv")
+    self.data = pd.read_csv(self.data_load)
+    self.list_RECIPES = []
+    self.list_1 = []
+    self.list_2 = []
+    self.list_3 = []
+    self.links = []
+    self.choose = 0
+    self.alpha = alpha
     self.beta = beta
-    self.text = text
-    self.wp = word_processer(self.text)
-    self.out = self.wp.obtain_input(self.text)
-    print(f'results from word processor: {self.out}')
+    self.food_data_list = []
+    self.short_sort = []
 
-  def return_scraper_data(self):
-    if len(self.out) > 0:
-      web_scraper_object = scraper(self.out[0], self.beta)
-      web_scraper_object.scrape()
-      recipes = web_scraper_object.sort_shortest()
-      return recipes
-    else:
-      return None
-def openRecipesListen():
-  text = 'open recipes'
-  patterns = ['Oops didn\'t recognize what you said, please say again', 'sorry, didint quite catch that, can you repeat yourself?', 'Oh it seems that i didnt really hear what you said, can you please repeat yourself?']
-  text = None
-  fault_count = 0
-  while text == None:
-    if fault_count > 0:
-      say(random.choice(patterns))
-    recogniser = speech_recog_object()
-    text = recogniser.run()
-    print(f'Heard: {text}')
-    if text != None:
-      if 'power off' in text or 'power down' in text or 'shut down' in text or 'turn off' in text:
-        say('powering off')
-        sys.exit()
-      search = re.search('open recipes', text.lower())
-      if search != None:
-        return True
-      if search == None:
-          search = re.search('open', text.lower())
-          if search != None:
-            return True
-          if search == None:
-            return False
-    fault_count += 1
+  def scrape(self):
+    for x in range(len(self.data)):
+      self.food_data = self.data.iloc[x, 0]
+      self.found = re.search(self.alpha, self.food_data)
+      if self.found != None:
+        self.link = self.data.iloc[x, 1]
+        self.link_list.append(self.link)
 
-def listen(find):
-  patterns = ['Oops didn\'t recognize what you said, please say again', 'sorry, didint quite catch that, can you repeat yourself?', 'Oh it seems that i didnt really hear what you said, can you please repeat yourself?']
-  text = None
-  fault_count = 0
-  while text == None:
-    if fault_count > 0:
-      say(random.choice(patterns))
-    recogniser = speech_recog_object()
-    text = recogniser.run()
-    print(f'Heard: {text}')
-    if text != None:
-      if 'power off' in text or 'power down' in text or 'shut down' in text or 'turn off' in text:
-        say('powering off')
-        sys.exit()
-      search = re.search(find, text.lower())
-      if search != None:
-        return True
-      if search == None:
-        return False
-    fault_count += 1
-
-     
-def find_recipe_interface(system):
-  recipes = system.return_scraper_data()
-  if recipes != None:
-    say('I found some recipes based on the ingredient')
-    say('Do you want me to also say the other ingredients of the recipe?')
-    result = listen('yes')
-    if result:
-      list_ingredients = True
-    else:
-      list_ingredients = False
-
-    patterns = ['Ok', 'Cool', 'Alright, lets get started then']
-    say(random.choice(patterns))
-    
-    ######## Gets groups of two recipes ########
-    recipe_groups = []
-    count = 0
-    for x in range(len(recipes)):
-      if list_ingredients == True:
-        result = 'Recipe ', str(x+1), ': ', str(recipes[x][1]), ' with the ingredients :', [re.sub(r"\([^()]*\)", "", ingredient) for ingredient in recipes[x][0]] 
-        print(''.join(list(result)))
-        say(''.join(list(result)))
-      else:
-        result = 'Recipe ', str(x+1), ': ', str(recipes[x][1]),'. The amount of ingredients is: ', str(len([re.sub(r"\([^()]*\)", "", ingredient) for ingredient in recipes[x][0]]))
-        print(''.join(list(result)))
-        say(''.join(list(result)))
- 
-      ##### Asks to chose recipe #####
-      patterns = ['Do you want to choose this recipe?', 'Do you want me to log this recipe?', 'Do you want to make this dish?']
-      say(random.choice(patterns))
-      result = listen('yes')
-      if result:
-        say(f'Ok, you chose the recipe: {recipes[x][1]}')
-        ##### creates list of chosen recipce #####
-        chosen_recipe = recipes[x]
-
-
-        ######## Adding recipes data to run_data csv ########
-        run_data_load = os.path.join(os.path.dirname(os.path.abspath(__file__)), "run_data.csv")
-        with open(run_data_load, mode='w') as file:
-          writer = csv.writer(file)
-
-          ingredients = [re.sub(r"\([^()]*\)", "", x) for x in chosen_recipe[0]]
-          title = chosen_recipe[1]
-          instructions = chosen_recipe[2]
-          print(f'title: {title}')
-          print(f'ingredients: {ingredients}')
-          print(f'instructions: {instructions}')
-          writer.writerow(['title', 'ingredients', 'instructions'])
-          writer.writerow([title, ingredients, instructions])
-          
-          ##### program ending here/ adding runtimes to program_data file #####
-          say('I have stored the recipe that you want to use, so next time I boot up, just say: open recipes')
-          program_data_load = os.path.join(os.path.dirname(os.path.abspath(__file__)), "program_data.csv")
-          program_data = pd.read_csv(program_data_load)
-          run_times = program_data.iloc[0, 0]
-          run_times += 1
-          with open(program_data_load, mode='w') as file:
-              file.truncate(0)
-              writer = csv.writer(file)
-              writer.writerow(['run_times'])
-              writer.writerow([run_times])
-          sys.exit()
-      else:
-        continue
-  else:
-    say('Didnt find anything for that food')
-    say('Do you want to try another one?')
-    result = listen('yes')
-    if result:
-      text = None
-      fault_count = 0
-      while text == None:
-        if fault_count > 0:
-          say('didn\'t recognise what you said, try again')
-        recogniser = speech_recog_object()
-        text = recogniser.run()
-        print(f'recognised: {text}')
-        if text != None:
-          text = text.lower()
-          if len(text) > 1:
-            text = text.split()
-          system = EnviroBot(beta=None, text=text)
-          find_recipe_interface(system)
-          sys.exit()
-        fault_count += 1
-    else:
-      say('ok powering off then')
+    ######## Checks for empty list (food words not mentioned or recognised) ########
+    if len(self.link_list) == 0:
+      print(f'System ERROR: couldnt find food item: {self.alpha}')
       sys.exit()
 
-def get_run_times():
-  program_data_load = os.path.join(os.path.dirname(os.path.abspath(__file__)), "Program Data.csv")
-  program_data = pd.read_csv(program_data_load)
-  run_times = program_data.iloc[0, 0]
-  return run_times
+    ######## Opens the page with soup #########
+    for self.link_list_choice in self.link_list:
+      self.req = Request(str(self.link_list_choice)) #Or any link
+      self.html_page = urlopen(self.req)
+      self.soup = BeautifulSoup(self.html_page, "lxml")
 
-def open_recipes_file():
-  say('opening recipes file')
-  data_load = os.path.join(os.path.dirname(os.path.abspath(__file__)), "run_data.csv")
 
-  with open(data_load, mode='r') as file:
-    data_read = pd.read_csv(file)
-    if data_read.empty:
-      say('the recipes file seems to be empty, try find a recipe first and try again')
-      run()
-    else:
-      say(f'the recipe: {data_read.iloc[0, 0]}  is currently in the file')
-      say('do you want me to read out the ingredients')
-      result = listen('yes')
-      if result:
-        say('here are the ingredients')
-        ##### Find and say the ingredients #####
-        ingreds = data_read.iloc[0, 1]
-        res = ingreds.strip('[]').split(', ')
-        for index in res:
-            #note that we dont change the actual file, we run this code to read someting
-            result = index.strip("'")
-            say(result)
+      ######## Sorts the links and returns the ingredients ########
+      for link in self.soup.findAll('a'):
+        self.main_link = link.get('href')
+        self.x = re.search("recipes/", str(self.main_link))
+        self.z = re.search("https", str(self.main_link))
+        self.a = re.search("collection", str(self.main_link))
+        if self.x != None and self.z != None and self.a == None:
+          from recipe_scrapers import scrape_me
+          try:
+            self.scrape_me = scrape_me(self.main_link)
+            ####### Gets the ingredients using scrape_me #######
+            self.z = list(self.scrape_me.ingredients())
+            
+            ######## checks for second ingredient in ingredients ########
+            #note that beta != None is because beta is already None, it just changes if a second food word is detected in the beginning text
+            if self.beta != None:
+              x = re.search(self.beta, z)
 
-        ##### ask to say the instructions #####
-        say('do you want me to say the instructions')
-        result = listen('yes')
-        if result:
-          instructions = data_read.iloc[0, 2]
-          say(f'The instructions are {instructions}') 
-        else:
-          say('powering off then')
-          sys.exit()
-      else:
-        say('ok, powering off then')
-        sys.exit()
+            if x != None:
+              try:
+                ######## Gets all of the data from the page ########
+                self.title = self.scrape_me.title()
+                self.instructions = str(self.scrape_me.instructions())
+                self.list_1 = [x for x in self.z]
+                self.list_2 = self.title  
+                self.list_3 = str(self.instructions) 
 
-  sys.exit()
+                food_list = [self.list_1, self.list_2, self.list_3]
+                if food_list not in self.food_data_list:
+                  self.food_data_list.append(food_list)
+              except:
+                continue
 
-def run():
-  text = None
-  while True:
-    data_load = os.path.join(os.path.dirname(os.path.abspath(__file__)), "Recipe Collection.csv")
-    data = pd.read_csv(data_load)
+            else:
+              print('Sorry, couldnt find the second ingredient, but i still found recipes with the first ingredient')
+              try:
+                ######## Gets all of the data from the page ########
+                self.title = self.scrape_me.title()
+                self.instructions = str(self.scrape_me.instructions())
+                self.list_1 = [x for x in self.z]
+                self.list_2 = self.title  
+                self.list_3 = str(self.instructions) 
 
-    ###### introduction #####
-    if debug_mode == False:
-      say('hi, i\'m the enviro bot')
-      say('you can say: find recipes to find a recipe or: open recipes to open the file where I have stored your past recipes')
-    print('PROGRAM START')
-    result = openRecipesListen()
-    if result:
-      open_recipes_file()
-    else:
-      say('alright, tell me your main ingredient')
-      fault_count = 0
-      while text == None:
-        if fault_count > 0:
-          say('didn\'t recognise what you said, try again')
-        recogniser = speech_recog_object()
-        text = recogniser.run()
-        print(f'recognised: {text}')
-        if text != None:
-          text = text.lower()
-          if len(text) > 1:
-            text = text.split()
-          system = EnviroBot(beta=None, text=text)
-          find_recipe_interface(system)
-          sys.exit()
-        fault_count += 1
+                food_list = [self.list_1, self.list_2, self.list_3]
+                if food_list not in self.food_data_list:
+                  self.food_data_list.append(food_list)
+              except:
+                continue
+                print('Continued')
+          except:
+            continue
+    
+  def sort_shortest(self):
+    for num in range(len(self.food_data_list)):
+      current_lowest = self.food_data_list[0]
+      for i in self.food_data_list:
+        if len(i[0]) < len(current_lowest[0]):
+          current_lowest = i 
+      self.short_sort.append(current_lowest)
+      self.food_data_list.pop(self.food_data_list.index(current_lowest))
+    return self.short_sort
 
-run()
+
+
+    
+
+
